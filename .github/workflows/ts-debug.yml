@@ -26,7 +26,7 @@ jobs:
           sudo apt update && sudo apt install -y openssh-server
           mkdir -p ~/.ssh
           # 写入公钥，从secret读取
-          echo ${{ secrets.TS_OAUTH_SK }} >> ~/.ssh/authorized_keys
+          echo "${{ secrets.TS_OAUTH_SK }}" >> ~/.ssh/authorized_keys
           # 权限必须正确，ssh对权限很敏感
           chmod 700 ~/.ssh
           chmod 600 ~/.ssh/authorized_keys
