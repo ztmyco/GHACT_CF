@@ -1,20 +1,39 @@
-name: Tailscale SSH Debug (Native Tailscale SSH)
-on: workflow_dispatch
+name: Tailscale SSH Debug
+on: workflow_dispatch # 手动触发调试
+
 jobs:
   debug:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # 换成 macos-latest / windows-latest 也支持
     steps:
-      - uses: actions/checkout@v4
-      - name: Connect Tailscale with --ssh
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 接入 Tailscale 内网
+      - name: Connect Tailscale
         uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
           extra-args: --ssh # 关键：开启Tailscale内置SSH
-      - name: Wait
+          # version: latest  # 可选，指定tailscale版本
+          # accept-routes: true
+          # exit-node: false
+
+      # 关键：启动sshd，并且输出tailscale IP，阻塞等待（调试断点）
+      - name: Start SSH & wait
         run: |
-          TS_IP=$(tailscale ip -4)
-          echo "Tailscale IP: $TS_IP"
-          echo "Connect: ssh root@$TS_IP 或者 ssh runner@$TS_IP"
-          sleep 3600
+          sudo apt update && sudo apt install -y openssh-server
+          mkdir -p ~/.ssh
+          # 写入公钥，从secret读取
+          cat > ~/.ssh/authorized_keys <<'EOF'
+      $TS_OAUTH_SK
+      EOF
+            # 权限必须正确，ssh对权限很敏感
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/authorized_keys
+            sudo systemctl start ssh
+            TS_IP=$(tailscale ip -4)
+            echo "===== Tailscale IP: $TS_IP ====="
+            echo "ssh runner@$TS_IP"
+            sleep 3600
