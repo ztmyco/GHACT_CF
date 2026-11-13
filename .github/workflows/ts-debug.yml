@@ -26,14 +26,12 @@ jobs:
           sudo apt update && sudo apt install -y openssh-server
           mkdir -p ~/.ssh
           # 写入公钥，从secret读取
-          cat > ~/.ssh/authorized_keys <<'EOF'
-      $TS_OAUTH_SK
-      EOF
-            # 权限必须正确，ssh对权限很敏感
-            chmod 700 ~/.ssh
-            chmod 600 ~/.ssh/authorized_keys
-            sudo systemctl start ssh
-            TS_IP=$(tailscale ip -4)
-            echo "===== Tailscale IP: $TS_IP ====="
-            echo "ssh runner@$TS_IP"
-            sleep 3600
+          echo ${{ secrets.TS_OAUTH_SK }} >> ~/.ssh/authorized_keys
+          # 权限必须正确，ssh对权限很敏感
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/authorized_keys
+          sudo systemctl start ssh
+          TS_IP=$(tailscale ip -4)
+          echo "===== Tailscale IP: $TS_IP ====="
+          echo "ssh runner@$TS_IP"
+          sleep 3600
